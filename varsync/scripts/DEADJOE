@@ -1,0 +1,11 @@
+
+*** These modified files were found in JOE when it aborted on Thu Dec  7 13:52:32 2017
+*** JOE was aborted by UNIX signal 15
+
+*** File '(Unnamed)'
+
+*** File '* Startup Log *'
+Processing '/etc/joe/joerc'...
+Processing '/etc/joe/ftyperc'...
+Finished processing /etc/joe/ftyperc
+Finished processing /etc/joe/joerc

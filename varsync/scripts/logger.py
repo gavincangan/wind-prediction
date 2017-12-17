@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+import rospy
+from sensor_msgs.msg import PointCloud2, Imu, Image
+from mavros_msgs.msg import RCIn
+from std_msgs.msg import String
+import re
+import sys
+import string
+from collections import deque
+#import pdb
+
+CONST_IMU = 1
+CONST_ZED = 2
+
+f_received_imu = False
+f_received_zed = False
+z_msgcount_imu = 0
+z_msgcount_zed = 0
+
+imu_data_collection = deque(maxlen=6)
+rcin_data_collection = deque(maxlen=3)
+
+def store_imu_data(data):
+    global imu_data_collection
+    imu_data_collection.append([data.orientation.x, data.orientation.y, data.orientation.z, data.orientation.w, data.angular_velocity.x, data.angular_velocity.y, data.angular_velocity.z, data.linear_acceleration.x, data.linear_acceleration.y, data.linear_acceleration.z] )
+
+
+def store_rcin_data(data):
+    global rcin_data_collection
+    rcin_data_collection.append(data.channels)
+
+def write_depth_data(data):
+    global imu_data_collection
+    global rcin_data_collection
+    fp = open(str(data.header.stamp.secs) + '.' + str(data.header.stamp.nsecs), 'w')
+    fp.write('rcin_data\n')
+    fp.write(''.join(str(e)+'\n' for e in rcin_data_collection))
+    fp.write('imu_data\n')
+    fp.write(''.join(str(e)+'\n' for e in imu_data_collection))
+    # imu_data_list[:] = []
+    fp.write('\ndepth_data\n')
+    depth_data = [data.header.seq, data.header.stamp.secs, data.header.stamp.nsecs, data.height, data.width, ''.join(str(ord(data_lev1)) + ', ' for data_lev1 in data.data)]
+    fp.write(str(depth_data))
+    fp.close()
+
+
+def data_sync(msg_const, msg_count, data):
+    global z_msgcount_imu
+    global z_msgcount_zed
+
+
+def callback_rcin(data):
+    store_rcin_data(data)
+
+
+def callback_imu(data):
+    global z_msgcount_imu
+    z_msgcount_imu += 1
+    store_imu_data(data)
+
+
+def callback_depth(data):
+    global z_msgcount_zed
+    z_msgcount_zed += 1
+    write_depth_data(data)
+
+
+def callback_gavin(data):
+    print('Received test topic Gavin')
+
+
+def logger():
+    rospy.init_node('logger')
+    imu_topic = "/mavros/imu/data"
+    rcin_topic = "/mavros/rc/in"
+    depth_topic = "/rgb/image_raw_color"
+    # depth_topic = "/depth/depth_registered"
+    gavin_topic = "/gavin"
+    rospy.Subscriber(depth_topic, Image, callback_depth)
+    rospy.Subscriber(imu_topic, Imu, callback_imu)
+    rospy.Subscriber(rcin_topic, RCIn, callback_rcin)
+    rospy.Subscriber(gavin_topic, String, callback_gavin)
+    rospy.spin()
+
+if __name__ == '__main__':
+    f_received_imu = False
+    f_received_zed = False
+    logger()
